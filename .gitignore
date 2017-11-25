@@ -1,0 +1,5 @@
+*.env
+getToken.rb
+*.bat
+*.vbs
+*.log
