@@ -59,8 +59,8 @@ module TrendTags
     post = "#{Time.now.strftime('%H:%M')}現在のトレンドタグ\n\n"
     [5, arr.length].min.times do |i|
       post << "＃#{arr[i][0]} [#{arr[i][1]}]"
-      if log['score_ex'].has_key?(arr[i][0])
-        before = (arr[i][1] - log['score_ex'][arr[i][0]])
+      if log['score'].has_key?(arr[i][0])
+        before = (arr[i][1] - log['score'][arr[i][0]])
         if before > 0
           post << "[↗+#{before.round(2)}]\n"
         elsif before < 0
@@ -90,12 +90,9 @@ module TrendTags
 
   def process(result)
     h = result['score']
-    h_ex = result['score_ex']
-    ng_tags = ['test', 'ミリシタガシャシミュレータ', 'imas_oshigoto', '奈緒のお天気', '奈緒のお天気警報情報', '歌田音のアイドル紹介', 'usa_botアイキャッチ', 'usa_bot更新キーワード', '歌田音のvocal_master']
+    ng_tags = ['test', 'ミリシタガシャシミュレータ', 'imas_oshigoto', '奈緒のお天気', '奈緒のお天気警報情報', '歌田音のアイドル紹介', 'usa_botアイキャッチ', 'usa_bot更新キーワード', '歌田音のvocal_master', 'official_bot']
     h.except!(*ng_tags)
-    h_ex.except!(*ng_tags)
     h.sort_by(&:last).reverse
-    h_ex.sort_by(&:last).reverse
   end
 
   def client
