@@ -90,7 +90,7 @@ module TrendTags
 
   def process(result)
     h = result['score']
-    ng_tags = ['test', 'ミリシタガシャシミュレータ', 'imas_oshigoto', '奈緒のお天気', '奈緒のお天気警報情報', '歌田音のアイドル紹介', 'usa_botアイキャッチ', 'usa_bot更新キーワード', '歌田音のvocal_master', 'official_bot']
+    ng_tags = ['test', 'ミリシタガシャシミュレータ', 'imas_oshigoto', '奈緒のお天気', '奈緒のお天気警報情報', '歌田音のアイドル紹介', 'usa_botアイキャッチ', 'usa_bot更新キーワード', '歌田音のvocal_master', 'official_bot', 'アイドル投票tb']
     h.except!(*ng_tags)
     h.sort_by(&:last).reverse
   end
