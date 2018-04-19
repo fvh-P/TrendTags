@@ -18,4 +18,5 @@ module Clockwork
   every(1.hour, 'trend_unlisted', at: '**:35')
   every(1.hour, 'trend_public', at: '**:45')
   every(1.hour, 'trend_unlisted', at: '**:55')
+  every(1.day, 'trend_daily', at: '00:06')
 end
