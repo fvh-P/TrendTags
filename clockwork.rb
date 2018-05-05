@@ -1,5 +1,5 @@
 require 'clockwork'
-require './TrendTags.rb'
+require_relative 'TrendTags'
 
 module Clockwork
   extend TrendTags
