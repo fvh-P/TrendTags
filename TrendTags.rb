@@ -10,6 +10,7 @@ module TrendTags
   require 'json'
 
   def trend_public
+    Dotenv.load
     post = trend
     if post.nil?
       return
@@ -18,6 +19,7 @@ module TrendTags
   end
 
   def trend_unlisted
+    Dotenv.load
     post = trend
     if post.nil?
       return
@@ -26,7 +28,14 @@ module TrendTags
   end
 
   def trend_daily
-    post = daily_highscore
+    Dotenv.load
+    log = get_yesterday(log_all)
+    post = daily_highscore(log)
+    if post.nil?
+      return
+    end
+    client.create_status(post, visibility: 'public')
+    post = daily_longtime(log)
     if post.nil?
       return
     end
@@ -36,8 +45,6 @@ module TrendTags
   private
 
   def trend
-    Dir.chdir(File.expand_path("../", __FILE__))
-    Dotenv.load
     log = log_last
     json = get_json('https://imastodon.net/api/v1/trend_tags')
     result = JSON.parse(json)
@@ -55,7 +62,7 @@ module TrendTags
     end
 
     log_add(json)
-    arr = process(result)
+    arr = remove_ng_tags(result).sort_by(&:last).reverse
 
     if arr.length == 0
       return nil
@@ -80,24 +87,14 @@ module TrendTags
     post
   end
 
-  def daily_highscore
-    Dir.chdir(File.expand_path("../", __FILE__))
-    Dotenv.load
-    ng_tags = ['test', 'ミリシタガシャシミュレータ', 'imas_oshigoto', '奈緒のお天気', '奈緒のお天気警報情報', '歌田音のアイドル紹介', 'usa_botアイキャッチ', 'usa_bot更新キーワード', '歌田音のvocal_master', 'official_bot', 'アイドル投票tb']
-    log = []
+  def daily_highscore(log)
     score = {}
-    File.open(File.expand_path("../TrendTags.log", __FILE__), "r").each_line do |l|
-      log << JSON.parse(l)
-    end
-    log.find_all do |h|
-      year, mon, date, hour, min, sec = h["updated_at"].split(/[-TZ:]/)
-      ((DateTime.now.beginning_of_day - 1.day)..DateTime.now).cover?(Time.utc(year, mon, date, hour, min, sec))
-    end.each do |h|
+    log.each do |h|
       score.merge!(h["score"]) do |k, o, n|
         n > o ? n : o
       end
     end
-    highscore = score.except(*ng_tags).sort do |a, b|
+    highscore = remove_ng_tags(score, false).sort do |a, b|
       a[1] <=> b[1]
     end.reverse
     post = ""
@@ -116,24 +113,73 @@ module TrendTags
     end
   end
 
+  def daily_longtime(log)
+    score = log.map do |e|
+      remove_ng_tags(e)
+    end
+    keys = score.map do |e|
+      e.sort_by { |k, v| -v }[0][0]
+    end.uniq
+    count = keys.inject({}) do |hash, key|
+      hash[key] = score.count do |item|
+        item.has_key?(key)
+      end
+      hash
+    end
+    rank = count.sort_by do |k, v|
+      -v
+    end
+    post = ""
+    if rank.nil? || rank.empty? || rank[0].nil?
+      return nil
+    end
+    post << "昨日のトレンド\n「ロングタイムランキング」\n1位:＃#{rank[0][0]}: #{rank[0][1] / 6}時間#{rank[0][1] % 6 * 10}分\n"
+    if rank[1].nil?
+      return post
+    end
+    post << "2位:＃#{rank[1][0]}: #{rank[1][1] / 6}時間#{rank[1][1] % 6 * 10}分\n"
+    if rank[2].nil?
+      return post
+    else
+      return post << "3位:＃#{rank[2][0]}: #{rank[2][1] / 6}時間#{rank[2][1] % 6 * 10}分"
+    end
+  end
+
+  def get_yesterday(log)
+    log.find_all do |h|
+      year, mon, date, hour, min, sec = h["updated_at"].split(/[-TZ:]/)
+      ((DateTime.now.beginning_of_day - 1.day + 10.minutes)..DateTime.now).cover?(Time.utc(year, mon, date, hour, min, sec))
+    end
+  end
+
+  def log_all
+    Dir.chdir(File.expand_path("../", __FILE__))
+    log = []
+    File.open(File.expand_path("../TrendTags.log", __FILE__), "r").each_line do |l|
+      log << JSON.parse(l)
+    end
+    log
+  end
+
   def log_last
+    Dir.chdir(File.expand_path("../", __FILE__))
     f = File.open(File.expand_path("../TrendTags.log", __FILE__),"r")
     log = JSON.parse(f.readlines[-1])
     f.close
-    return log
+    log
   end
 
   def log_add(json)
+    Dir.chdir(File.expand_path("../", __FILE__))
     f = File.open(File.expand_path("../TrendTags.log", __FILE__),"a")
     f.puts(json)
     f.close
   end
 
-  def process(result)
-    h = result['score']
-    ng_tags = ['test', 'ミリシタガシャシミュレータ', 'imas_oshigoto', '奈緒のお天気', '奈緒のお天気警報情報', '歌田音のアイドル紹介', 'usa_botアイキャッチ', 'usa_bot更新キーワード', '歌田音のvocal_master', 'official_bot', 'アイドル投票tb']
-    h.except!(*ng_tags)
-    h.sort_by(&:last).reverse
+  def remove_ng_tags(result, nested = true)
+    result = result['score'] if nested
+    ng_tags = ['test', 'ミリシタガシャシミュレータ', 'imas_oshigoto', '奈緒のお天気', '奈緒のお天気警報情報', '歌田音のアイドル紹介', 'usa_botアイキャッチ', 'usa_bot更新キーワード', '歌田音のvocal_master', 'official_bot', 'アイドル投票tb', 'nowplaying', 'とは']
+    result.except!(*ng_tags)
   end
 
   def client
@@ -145,7 +191,7 @@ module TrendTags
     Net::HTTP.get(uri)
   end
 
-  module_function :trend_public, :trend_unlisted, :trend_daily, :trend, :daily_highscore, :log_last, :log_add, :process, :client, :get_json
+  module_function :trend_public, :trend_unlisted, :trend_daily, :trend, :daily_highscore, :daily_longtime, :get_yesterday, :log_all, :log_last, :log_add, :remove_ng_tags, :client, :get_json
 end
 
 if __FILE__ == $0
