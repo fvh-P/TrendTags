@@ -114,7 +114,12 @@ module TrendTags
       remove_ng_tags(e)
     end
     keys = score.map do |e|
-      e.sort_by { |k, v| -v }[0][0]
+      tmp = e.sort_by { |k, v| -v }[0]
+      if tmp.nil?
+        nil
+      else
+        tmp[0]
+      end
     end.uniq
     count = keys.inject({}) do |hash, key|
       hash[key] = score.count do |item|
