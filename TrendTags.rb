@@ -12,34 +12,30 @@ module TrendTags
   def trend_public
     Dotenv.load
     post = trend
-    if post.nil?
-      return
+    unless post.nil?
+      client.create_status(post, visibility: 'public')
     end
-    client.create_status(post, visibility: 'public')
   end
 
   def trend_unlisted
     Dotenv.load
     post = trend
     if post.nil?
-      return
+      client.create_status(post, visibility: 'unlisted')
     end
-    client.create_status(post, visibility: 'unlisted')
   end
 
   def trend_daily
     Dotenv.load
     log = get_yesterday(log_all)
     post = daily_highscore(log)
-    if post.nil?
-      return
+    unless post.nil?
+      client.create_status(post, visibility: 'public')
     end
-    client.create_status(post, visibility: 'public')
     post = daily_longtime(log)
-    if post.nil?
-      return
+    unless post.nil?
+      client.create_status(post, visibility: 'public')
     end
-    client.create_status(post, visibility: 'public')
   end
 
   private
