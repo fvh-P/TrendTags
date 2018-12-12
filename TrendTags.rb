@@ -20,7 +20,7 @@ module TrendTags
   def trend_unlisted
     Dotenv.load
     post = trend
-    if post.nil?
+    unless post.nil?
       client.create_status(post, visibility: 'unlisted')
     end
   end
