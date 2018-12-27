@@ -148,7 +148,7 @@ module TrendTags
 
   def get_yesterday(log)
     log.find_all do |h|
-      year, mon, date, hour, min, sec = h["updated_at"].split(/[-TZ:]/)
+      year, mon, date, hour, min, sec = h["updated_at"].split(/[-TZ:.]/)
       ((DateTime.now.beginning_of_day - 1.day + 10.minutes)..DateTime.now).cover?(Time.utc(year, mon, date, hour, min, sec))
     end
   end
