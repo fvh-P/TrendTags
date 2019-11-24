@@ -77,7 +77,7 @@ module TrendTags
           post << "[→±0]\n"
         end
       else
-        post << "[NEW]\n"
+        post << "[🆕]\n"
       end
     end
     post
